@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+
+declare -A params
+
+function load_config_file() {
+  if [[ -f "${1}" ]] ; then
+    while IFS= read -r line; do
+      if [[ -n "${line}" ]] ; then
+        params[${line%%=*}]=${line#*=}
+      fi
+    done < "${1}"
+  fi
+}
+
+function read_value() {
+  key="${1}"
+  prompt="${2}"
+  default="${params["${key}"]}"
+  echo -n "${prompt}"
+  if [[ -n "${default}" ]]; then
+    echo -n " [${default}]"
+  fi
+  echo -n ": "
+
+  read -r answer
+  if [[ -n "${answer}" ]] ; then
+    params["${key}"]="${answer}"
+    return 0
+  else
+    return 1
+  fi
+}
+
+load_config_file ".defaults.config"
+load_config_file ".config"
+
+echo '==============================================================================================================='
+echo '   General backend configuration'
+echo '---------------------------------------------------------------------------------------------------------------'
+read_value 'general.backend.bucket' 'Bucket'
+read_value 'general.backend.key' 'Key'
+read_value 'general.backend.region' 'Region'
+echo
+
+echo '==============================================================================================================='
+echo '    Cutover backend configuration'
+echo '---------------------------------------------------------------------------------------------------------------'
+if [[ -z ${params['cutover.backend.bucket']} ]] ; then
+  params['cutover.backend.bucket']=${params['general.backend.bucket']}
+fi
+
+if [[ -z ${params['backend.cutover.region']} ]] ; then
+  params['cutover.backend.region']=${params['general.backend.region']}
+fi
+
+read_value 'cutover.backend.bucket' 'Bucket'
+read_value 'cutover.backend.key' 'Key'
+read_value 'cutover.backend.region' 'Region'
+echo
+
+
+echo '==============================================================================================================='
+echo '    Variables configuration'
+echo '---------------------------------------------------------------------------------------------------------------'
+read_value 'variables.aws_region' 'AWS Region to deploy'
+read_value 'variables.api_name' 'API name'
+read_value 'variables.test_stage_name' 'Test stage name'
+read_value 'variables.prod_stage_name' 'Prod stage name'
+read_value 'variables.lambda_name' 'Lambda function name'
+read_value 'variables.lambda_runtime' 'Lambda runtime'
+echo
+
+{
+  for key in "${!params[@]}"; do
+    echo "${key}=${params[$key]}"
+  done
+} | sort > .config
+
+# Write General configuration
+{
+  echo "aws_region=\"${params['variables.aws_region']}\""
+  echo "api_name=\"${params['variables.api_name']}\""
+  echo "test_stage_name=\"${params['variables.test_stage_name']}\""
+  echo "prod_stage_name=\"${params['variables.prod_stage_name']}\""
+  echo "lambda_name=\"${params['variables.lambda_name']}\""
+  echo "lambda_runtime=\"${params['variables.lambda_runtime']}\""
+} > .auto.tfvars
+
+# Write Cutover variables
+{
+  echo "remote_backend_bucket=\"${params['general.backend.bucket']}\""
+  echo "remote_backend_key=\"${params['general.backend.key']}\""
+  echo "remote_backend_region=\"${params['general.backend.region']}\""
+} > cutover/.auto.tfvars
+
+# Init deployments
+echo '==============================================================================================================='
+echo '    Terraform init: general'
+echo '---------------------------------------------------------------------------------------------------------------'
+set -x
+terraform init \
+    -backend-config="bucket=${params['general.backend.bucket']}" \
+    -backend-config="key=${params['general.backend.key']}" \
+    -backend-config="region=${params['general.backend.region']}"
+set +x
+echo
+
+echo '==============================================================================================================='
+echo '    Terraform init: cutover'
+echo '---------------------------------------------------------------------------------------------------------------'
+set -x
+cd cutover && terraform init \
+    -backend-config="bucket=${params['cutover.backend.bucket']}" \
+    -backend-config="key=${params['cutover.backend.key']}" \
+    -backend-config="region=${params['cutover.backend.region']}"
+set +x
+echo
