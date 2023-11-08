@@ -62,7 +62,7 @@ echo
 echo '==============================================================================================================='
 echo '    Variables configuration'
 echo '---------------------------------------------------------------------------------------------------------------'
-read_value 'variables.aws_region' 'AWS Region to deploy'
+read_value 'variables.aws_region' 'Target AWS Region'
 read_value 'variables.api_name' 'API name'
 read_value 'variables.test_stage_name' 'Test stage name'
 read_value 'variables.prod_stage_name' 'Prod stage name'

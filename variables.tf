@@ -1,6 +1,6 @@
 variable "aws_region" {
   type        = string
-  description = "AWS region where to deploy infrastructure"
+  description = "Target AWS Region"
   default     = "us-east-1"
 }
 
@@ -31,8 +31,8 @@ variable "lambda_runtime" {
   type        = string
   description = "Python runtime to use for lambda function"
   validation {
-    condition     = contains(["python3.7", "python3.8", "python3.9", "python3.10"], var.lambda_runtime)
-    error_message = "Valid values for var: lambda_runtime are (python3.7, python3.8, python3.9, python3.10)."
+    condition     = contains(["python3.8", "python3.9", "python3.10"], var.lambda_runtime)
+    error_message = "Valid values for var: lambda_runtime are (python3.8, python3.9, python3.10)."
   }
   default = "python3.10"
 }
