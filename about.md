@@ -62,7 +62,7 @@ aws lambda add-permission \
 
 ## Caution
 
-It's important to note that for each Lambda function change, a new version is published, and a new deployment is created. Therefore, it's necessary to track obsolete deployments and Lambda versions, as they consume storage. For more information on this topic, refer to (Monitoring Lambda code storage)[https://docs.aws.amazon.com/lambda/latest/operatorguide/code-storage.html].
+It's important to note that for each Lambda function change, a new version is published, and a new deployment is created. Therefore, it's necessary to track obsolete deployments and Lambda versions, as they consume storage. For more information on this topic, refer to [Monitoring Lambda code storage](https://docs.aws.amazon.com/lambda/latest/operatorguide/code-storage.html).
 
 ## Implementation
 
